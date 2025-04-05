@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shark Tracker</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: sans-serif;
+    }
+    #map {
+      height: 100%;
+      width: 100%;
+    }
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      background-color: rgba(0, 0, 0, 0.75);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: white;
+      z-index: 10;
+    }
+    #sharkNameInput {
+      padding: 10px;
+      font-size: 1rem;
+      margin-top: 10px;
+    }
+    #submitName, #overwriteButton {
+      margin-top: 10px;
+      padding: 8px 16px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .shark-avatar {
+      width: 32px;
+      height: 32px;
+      transform: translate(-16px, -16px);
+    }
+    #countdownOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      background-color: rgba(255, 0, 0, 0.8);
+      color: white;
+      font-size: 6rem;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      flex-direction: column;
+    }
+    #explosion {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      display: none;
+      background-image: url('https://media.giphy.com/media/TlK63EKz3z5iwoL9aE/giphy.gif');
+      background-size: cover;
+      background-position: center;
+      z-index: 30;
+    }
+    #confirmationModal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      color: black;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      z-index: 25;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+    }
+    #confirmationModal button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+  </style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+<body>
+  <div id="overlay">
+    <h1>Name Your Shark!</h1>
+    <input id="sharkNameInput" type="text" placeholder="Enter shark name" />
+    <button id="submitName">Track Shark</button>
+  </div>
+  <div id="map"></div>
+  <button onclick="showConfirmationModal()" id="overwriteButton" style="position: absolute; top: 10px; right: 10px; z-index: 1000;">Overwrite</button>
+
+  <div id="confirmationModal">
+    <p>Are you sure?</p>
+    <div>
+      <button onclick="confirmOverwrite(true)">Yes</button>
+      <button onclick="confirmOverwrite(false)">No</button>
+    </div>
+  </div>
+
+  <div id="countdownOverlay"><span id="countdown">5</span></div>
+  <div id="explosion"></div>
+
+  <audio id="alarmSound" src="https://www.soundjay.com/mechanical/sounds/mechanical-alarm-01.mp3"></audio>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const overlay = document.getElementById('overlay');
+    const submitButton = document.getElementById('submitName');
+    const sharkNameInput = document.getElementById('sharkNameInput');
+    const countdownOverlay = document.getElementById('countdownOverlay');
+    const countdownEl = document.getElementById('countdown');
+    const explosion = document.getElementById('explosion');
+    const alarmSound = document.getElementById('alarmSound');
+    const confirmationModal = document.getElementById('confirmationModal');
+
+    let sharkMarker;
+    let sharkName = "";
+    let sharkLat = 36.7783;
+    let sharkLng = -122.419;
+
+    submitButton.addEventListener('click', () => {
+      sharkName = sharkNameInput.value.trim() || "Sharky";
+      overlay.style.display = 'none';
+      initMap();
+    });
+
+    function initMap() {
+      const map = L.map('map').setView([sharkLat, sharkLng], 6);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      const sharkIcon = L.icon({
+        iconUrl: 'https://img.icons8.com/?size=100&id=16105&format=png&color=000000',
+        iconSize: [32, 32],
+        className: 'shark-avatar'
+      });
+
+      sharkMarker = L.marker([sharkLat, sharkLng], { icon: sharkIcon })
+        .addTo(map)
+        .bindPopup(`${sharkName} is swimming here!`)
+        .openPopup();
+
+      setInterval(() => {
+        const deltaLat = (Math.random() - 0.5) * 0.2;
+        const deltaLng = (Math.random() - 0.5) * 0.2;
+        sharkLat += deltaLat;
+        sharkLng += deltaLng;
+        sharkMarker.setLatLng([sharkLat, sharkLng]);
+        sharkMarker.setPopupContent(`${sharkName} is now here!`);
+      }, 2000);
+    }
+
+    function showConfirmationModal() {
+      confirmationModal.style.display = 'flex';
+    }
+
+    function confirmOverwrite(confirmed) {
+      confirmationModal.style.display = 'none';
+      if (confirmed) {
+        triggerOverwrite();
+      }
+    }
+
+    function triggerOverwrite() {
+      countdownOverlay.style.display = 'flex';
+      explosion.style.display = 'none';
+      let counter = 5;
+      countdownEl.textContent = counter;
+      alarmSound.play();
+
+      const countdownInterval = setInterval(() => {
+        counter--;
+        countdownEl.textContent = counter;
+        if (counter <= 0) {
+          clearInterval(countdownInterval);
+          countdownOverlay.style.display = 'none';
+          explosion.style.display = 'block';
+        }
+      }, 1000);
+    }
+  </script>
+</body>
+</html>
