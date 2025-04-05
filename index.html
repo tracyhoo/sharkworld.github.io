@@ -9,10 +9,14 @@
       height: 100%;
       margin: 0;
       font-family: sans-serif;
+      position: relative;
+      overflow: hidden;
     }
     #map {
       height: 100%;
       width: 100%;
+      position: relative;
+      z-index: 1;
     }
     #overlay {
       position: absolute;
@@ -26,7 +30,7 @@
       justify-content: center;
       flex-direction: column;
       color: white;
-      z-index: 10;
+      z-index: 1000;
     }
     #sharkNameInput {
       padding: 10px;
@@ -56,7 +60,7 @@
       display: none;
       align-items: center;
       justify-content: center;
-      z-index: 20;
+      z-index: 2000;
       flex-direction: column;
     }
     #explosion {
@@ -65,11 +69,13 @@
       left: 0;
       height: 100%;
       width: 100%;
+      background-color: black;
+      color: white;
+      font-size: 3rem;
+      z-index: 3000;
+      align-items: center;
+      justify-content: center;
       display: none;
-      background-image: url('https://media.giphy.com/media/TlK63EKz3z5iwoL9aE/giphy.gif');
-      background-size: cover;
-      background-position: center;
-      z-index: 30;
     }
     #confirmationModal {
       position: absolute;
@@ -80,7 +86,7 @@
       color: black;
       padding: 20px;
       box-shadow: 0 0 10px rgba(0,0,0,0.5);
-      z-index: 25;
+      z-index: 1500;
       display: none;
       flex-direction: column;
       align-items: center;
@@ -90,6 +96,12 @@
       padding: 10px 20px;
       font-size: 1rem;
       cursor: pointer;
+    }
+    #overwriteButton {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1200;
     }
   </style>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
@@ -101,7 +113,7 @@
     <button id="submitName">Track Shark</button>
   </div>
   <div id="map"></div>
-  <button onclick="showConfirmationModal()" id="overwriteButton" style="position: absolute; top: 10px; right: 10px; z-index: 1000;">Overwrite</button>
+  <button onclick="showConfirmationModal()" id="overwriteButton">Overwrite</button>
 
   <div id="confirmationModal">
     <p>Are you sure?</p>
@@ -112,9 +124,10 @@
   </div>
 
   <div id="countdownOverlay"><span id="countdown">5</span></div>
-  <div id="explosion"></div>
+  <div id="explosion">The world is now destroyed.</div>
 
-  <audio id="alarmSound" src="https://www.soundjay.com/mechanical/sounds/mechanical-alarm-01.mp3"></audio>
+  <audio id="alarmSound" src="./countdown-beep.mp3"></audio>
+  <audio id="bombSound" src="./smoke.mp3"></audio>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
@@ -125,6 +138,7 @@
     const countdownEl = document.getElementById('countdown');
     const explosion = document.getElementById('explosion');
     const alarmSound = document.getElementById('alarmSound');
+    const bombSound = document.getElementById('bombSound');
     const confirmationModal = document.getElementById('confirmationModal');
 
     let sharkMarker;
@@ -190,9 +204,10 @@
         if (counter <= 0) {
           clearInterval(countdownInterval);
           countdownOverlay.style.display = 'none';
-          explosion.style.display = 'block';
+          bombSound.play();
+          explosion.style.display = 'flex';
         }
-      }, 1000);
+      }, 300);
     }
   </script>
 </body>
